@@ -1,6 +1,6 @@
 {
   "name": "jest-bin",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Find and run the appropriate jest bin file among the installed react-app-rewried, react-scripts and jest",
   "author": "SSen",
   "license": "MIT",
