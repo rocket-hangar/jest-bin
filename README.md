@@ -8,7 +8,7 @@ This is useful when running Testcases in VSCode's Jest-Run-It or Webstorm (Intel
 
 <img src="https://github.com/rocket-hangar/jest-bin/blob/main/readme-assets/jest-run-it.png?raw=true" width="700" />
 
-Change the "Jest Path" of "Jest Run It" configuration to `node_modules/.bin/select-jest-bin`
+Change the "Jest Path" of "Jest Run It" configuration to `node_modules/.bin/jest-bin`
 
 ## Configuration for Webstorm (IntelliJ)
 
