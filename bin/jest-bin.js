@@ -4,7 +4,17 @@ const spawn = require('react-dev-utils/crossSpawn');
 const path = require('path');
 const fs = require('fs');
 
-function findJestBin(dir) {
+function findPackageRoot(dir) {
+  const package_json = path.resolve(dir, 'package.json');
+  
+  if (fs.existsSync(package_json)) {
+    return dir;
+  }
+  
+  return dir !== '/' ? findPackageRoot(path.dirname(dir)) : undefined;
+}
+
+function findJestBin(dir, rewired) {
   const node_modules = path.resolve(dir, 'node_modules');
 
   if (fs.existsSync(node_modules)) {
@@ -17,10 +27,8 @@ function findJestBin(dir) {
 
     const cwd = path.dirname(node_modules);
 
-    const configOverridesJs = path.resolve(cwd, 'config-overrides.js');
-
     const testPath =
-      fs.existsSync(react_app_rewired) && fs.existsSync(configOverridesJs)
+      rewired && fs.existsSync(react_app_rewired)
         ? path.resolve(
             fs.realpathSync(react_app_rewired),
             '../../scripts/test.js',
@@ -30,15 +38,34 @@ function findJestBin(dir) {
         : fs.existsSync(jest)
         ? jest
         : undefined;
-
+    
     if (testPath) {
-      return ([node, , ...argv]) => {
-        return spawn.sync(node, [testPath, ...argv], { stdio: 'inherit', cwd });
-      };
+      return testPath;
     }
   }
 
-  return dir !== '/' ? findJestBin(path.dirname(dir)) : undefined;
+  return dir !== '/' ? findJestBin(path.dirname(dir), rewired) : undefined;
+}
+
+function getJestRunner(dir) {
+  const cwd = findPackageRoot(dir);
+  
+  if (!cwd) {
+    throw new Error(`Can't find package root from ${dir}`);
+  }
+  
+  const testPath = findJestBin(cwd, fs.existsSync(path.resolve(cwd, 'config-overrides.js')));
+  
+  if (!testPath) {
+    throw new Error(`Can't find jest testPath from ${cwd}`);
+  }
+  
+  console.log(`CWD: ${cwd}`);
+  console.log(`JEST TEST PATH: ${testPath}`);
+  
+  return ([node, , ...argv]) => {
+    return spawn.sync(node, [testPath, ...argv], { stdio: 'inherit', cwd });
+  };
 }
 
 const file = process.argv.find((a) => {
@@ -49,9 +76,9 @@ let runJest;
 
 if (file) {
   process.env.CI = true;
-  runJest = findJestBin(path.dirname(file));
+  runJest = getJestRunner(path.dirname(file));
 } else {
-  runJest = findJestBin(process.cwd());
+  runJest = getJestRunner(process.cwd());
 }
 
 if (typeof runJest === 'function') {
